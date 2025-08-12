@@ -4,15 +4,16 @@ import {
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
+import { FirstLoginGuard } from '../../common/guards/first-login.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
-import { CurrentUser} from '../../common/decorators/current-user.decorator';
+import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import type { JwtUser } from '../../common/decorators/current-user.decorator';
+import type { Express } from 'express'; // important avec isolatedModules
 import { CreateExpenseDto } from './dtos/create-expense.dto';
-import { UpdateStatusDto } from './dtos/update-status.dto';
 import { ExpensesService } from './expenses.service';
 import { StorageService } from '../storage/storage.service';
 
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard, RolesGuard, FirstLoginGuard)
 @Controller('expenses')
 export class ExpensesController {
   constructor(private expenses: ExpensesService, private storage: StorageService) {}

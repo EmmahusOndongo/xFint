@@ -18,14 +18,25 @@ export class AuthController {
   async login(@Body() dto: LoginDto, @Res({ passthrough: true }) res: Response) {
     const u = await this.auth.validateUser(dto.email, dto.password);
     const { access, refresh } = this.auth.signTokens({
-      id: u.id, email: u.email, role: u.role, must_set_password: u.must_set_password,
+      id: u.id,
+      email: u.email,
+      role: u.role,
+      must_set_password: u.must_set_password,
     });
 
     res.cookie(AUTH.ACCESS.COOKIE, access, {
-      httpOnly: true, sameSite: 'lax', secure: APP.COOKIE_SECURE, domain: APP.COOKIE_DOMAIN, maxAge: 1000 * 60 * 60,
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: APP.COOKIE_SECURE,
+      domain: APP.COOKIE_DOMAIN,
+      maxAge: 1000 * 60 * 60, // 1h
     });
     res.cookie(AUTH.REFRESH.COOKIE, refresh, {
-      httpOnly: true, sameSite: 'lax', secure: APP.COOKIE_SECURE, domain: APP.COOKIE_DOMAIN, maxAge: 1000 * 60 * 60 * 24 * 7,
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: APP.COOKIE_SECURE,
+      domain: APP.COOKIE_DOMAIN,
+      maxAge: 1000 * 60 * 60 * 24 * 7, // 7j
     });
     return { ok: true };
   }
@@ -43,10 +54,35 @@ export class AuthController {
     return user;
   }
 
+  // IMPORTANT : pas de FirstLoginGuard ici, pour permettre le changement au 1er login
   @UseGuards(JwtAuthGuard)
   @Post('set-password')
-  async setPassword(@CurrentUser() user: JwtUser, @Body() dto: SetPasswordDto) {
+  async setPassword(
+    @CurrentUser() user: JwtUser,
+    @Body() dto: SetPasswordDto,
+    @Res({ passthrough: true }) res: Response
+  ) {
     await this.users.setPassword(user.sub, dto.newPassword);
+
+    // réémettre des tokens avec must_set_password=false
+    const fresh = { id: user.sub, email: user.email, role: user.role, must_set_password: false };
+    const { access, refresh } = this.auth.signTokens(fresh);
+
+    res.cookie(AUTH.ACCESS.COOKIE, access, {
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: APP.COOKIE_SECURE,
+      domain: APP.COOKIE_DOMAIN,
+      maxAge: 1000 * 60 * 60,
+    });
+    res.cookie(AUTH.REFRESH.COOKIE, refresh, {
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: APP.COOKIE_SECURE,
+      domain: APP.COOKIE_DOMAIN,
+      maxAge: 1000 * 60 * 60 * 24 * 7,
+    });
+
     return { ok: true };
   }
 }

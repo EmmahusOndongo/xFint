@@ -1,21 +1,31 @@
+/* eslint-disable no-console */
 import * as bcrypt from 'bcrypt';
-import { makeSupabaseAdmin } from '../config/supabase.config';
+import { createClient } from '@supabase/supabase-js';
+import 'dotenv/config';
+
 
 async function run() {
-  const sb = makeSupabaseAdmin();
+  const url = process.env.SUPABASE_URL!;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+  if (!url || !key) throw new Error('SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY missing');
+
+  const sb = createClient(url, key, { auth: { autoRefreshToken: false, persistSession: false } });
+
   const email = 'manager@supherman.com';
   const password = 'Suph3rm4n!';
   const hash = await bcrypt.hash(password, 10);
 
-  const { data: existing } = await sb.from('users').select('*').eq('email', email).maybeSingle();
-  if (existing) {
-    await sb.from('users').update({ role: 'MANAGER', password_hash: hash, must_set_password: false }).eq('email', email);
-    console.log('✅ Manager updated');
-  } else {
-    await sb.from('users').insert({
-      email, role: 'MANAGER', password_hash: hash, must_set_password: false
-    });
-    console.log('✅ Manager created');
-  }
+  // upsert manager
+  const { error: upsertErr } = await sb
+    .from('users')
+    .upsert(
+      { email, role: 'MANAGER', password_hash: hash, must_set_password: false },
+      { onConflict: 'email' }
+    );
+  if (upsertErr) throw upsertErr;
+
+  console.log('✅ Manager ready:', email);
 }
-run().then(() => process.exit(0)).catch(e => { console.error(e); process.exit(1); });
+
+run().catch((e) => { console.error('❌ Seed failed:', e); process.exit(1); })
+      .then(() => process.exit(0));
