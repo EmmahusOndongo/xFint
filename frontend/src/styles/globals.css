@@ -1,0 +1,225 @@
+@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ===== THEME TOKENS ===== */
+@layer base {
+  :root {
+    --bg:            255 255 255;      /* light */
+    --card:          255 255 255;
+    --muted:         100 116 139;      /* slate-500 */
+    --text:          15 23 42;         /* slate-900 */
+    --border:        226 232 240;      /* slate-200 */
+    --accent:        241 245 249;      /* slate-100 */
+    --primary:       124 58 237;       /* violet-600 */
+  }
+  .dark {
+    --bg:            4 9 20;           /* #040914 */
+    --card:          10 16 28;         /* proche #0b1320 */
+    --muted:         148 163 184;      /* slate-400 */
+    --text:          229 231 235;      /* slate-200 */
+    --border:        31 41 55;         /* slate-700 */
+    --accent:        17 24 39;         /* slate-900 */
+    --primary:       139 92 246;       /* violet-500 */
+  }
+
+  html, body {
+    @apply h-full;
+  }
+  body{
+    background-color: rgb(var(--bg));
+    color: rgb(var(--text));
+    @apply antialiased;
+  }
+}
+
+/* ===== SMALL DESIGN SYSTEM ===== */
+@layer components {
+  .card {
+    @apply rounded-xl border shadow-sm;
+    background-color: rgb(var(--card));
+    border-color: rgb(var(--border));
+  }
+  .table-shell {
+    @apply w-full overflow-hidden rounded-lg border;
+    background-color: rgb(var(--card));
+    border-color: rgb(var(--border));
+  }
+
+  /* EN-TÊTE : plus de fond gris, juste une bordure bas */
+  .table-head {
+    @apply text-[11px] uppercase tracking-wide border-b;
+    color: rgb(var(--muted));
+    background-color: transparent;          /* ⬅️ enlève la bande */
+    border-color: rgb(var(--border));
+  }
+
+  /* Optionnel : un peu plus de densité sur les cells */
+  .table-head th { @apply px-4 py-3 text-left; }
+  .table-row td  { @apply px-4 py-3; }
+  .table-row {
+    @apply transition-colors;
+  }
+  .table-row:hover {
+    background-color: color-mix(in oklab, rgb(var(--accent)) 70%, transparent);
+  }
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-3.5 py-2.5 text-sm font-medium transition;
+    color: rgb(var(--primary));
+    background-color: rgb(var(--primary) / 0.10);  /* lavande claire */
+    border: 1px solid rgb(var(--primary) / 0.35);  /* liseré violet doux */
+  }
+  .btn:hover { background-color: rgb(var(--primary) / 0.16); }
+  .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+  /* tu peux garder le plein si besoin ailleurs */
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-3.5 py-2.5 text-sm font-medium text-white transition;
+    background-color: rgb(var(--primary));
+  }
+  .btn-primary:hover { filter: brightness(0.95); }
+
+}
+
+
+@layer components {
+  .topbar {
+    @apply sticky top-0 z-40 flex items-center gap-3 border-b p-3 md:hidden;
+    background-color: rgb(var(--card));
+    border-color: rgb(var(--border));
+  }
+  .sidebar {
+    @apply hidden md:block sticky top-0 h-svh border-r p-4;
+    background-color: rgb(var(--card));
+    border-color: rgb(var(--border));
+  }
+  .nav-item {
+    @apply flex items-center gap-3 rounded-xl px-3 py-2 text-sm transition select-none;
+  }
+  .nav-item:hover {
+    background-color: rgb(var(--accent));
+  }
+  .nav-item-active {
+    background-color: rgb(var(--primary) / 0.10);
+    color: rgb(var(--primary));
+    outline: 1px solid rgb(var(--primary) / 0.25);
+  }
+}
+
+@layer components {
+  .form        { @apply grid gap-5; }
+  .form-field  { @apply grid gap-1.5; }
+  .form-label  { @apply text-xs font-semibold; color: rgb(var(--text)); }
+  .form-hint   { @apply text-xs; color: rgb(var(--muted)); }
+  .form-error  { @apply rounded-xl border p-3 text-sm; border-color: rgb(var(--border)); background-color: rgb(var(--accent)); }
+}
+
+@layer components {
+  /* Inputs uniformes (fond gris doux, radius net, focus propre) */
+  .input {
+    @apply h-10 w-full rounded-xl border px-3 text-sm outline-none transition;
+    background-color: rgb(var(--accent));        /* gris doux en light, gris sombre en dark */
+    border-color: rgb(var(--border));
+    color: rgb(var(--text));
+    background-clip: padding-box;                /* évite les coins blancs sur certains navigateurs */
+  }
+  .input::placeholder { color: rgb(var(--muted)); }
+  .input:focus {
+    border-color: rgb(var(--primary) / 0.45);
+    box-shadow: 0 0 0 3px rgb(var(--primary) / 0.12);
+  }
+
+  /* Spécifique aux selects : supprime l’arrow native (appearance) + espace à droite
+     et garantit un clipping parfait du radius. */
+  .input-select {
+    appearance: none;
+    padding-right: 2.25rem;  /* place pour l’icône */
+  }
+}
+
+@layer components {
+  .toolbar-row {
+    @apply flex items-center justify-between gap-3 border-b;
+    padding: 10px 16px;
+    border-color: rgb(var(--border));
+  }
+  .segmented { @apply hidden md:flex items-center gap-1; }
+  .seg-item {
+    @apply rounded-full px-3 py-1.5 text-xs border transition;
+    border-color: rgb(var(--border));
+    background-color: transparent;
+    color: rgb(var(--muted));
+  }
+  .seg-item.active {
+    background-color: rgb(var(--primary) / 0.10);
+    color: rgb(var(--primary));
+    border-color: rgb(var(--primary) / 0.30);
+  }
+  .chip {
+    @apply ml-2 inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full px-1.5 text-[10px] font-semibold;
+    background-color: rgb(var(--accent));
+    color: rgb(var(--text));
+    border: 1px solid rgb(var(--border));
+  }
+  
+  .btn-chip {
+    @apply inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium ring-1 ring-inset transition-colors focus:outline-none;
+  }
+
+  /* Voir → bleu */
+  .btn-info {
+    @apply text-blue-700 bg-blue-50 ring-blue-200 hover:bg-blue-100 
+          dark:text-blue-300 dark:bg-blue-500/10 dark:ring-blue-400/30;
+  }
+
+  /* Valider → vert */
+  .btn-success {
+    @apply text-emerald-700 bg-emerald-50 ring-emerald-200 hover:bg-emerald-100 
+          dark:text-emerald-300 dark:bg-emerald-500/10 dark:ring-emerald-400/30;
+  }
+
+  /* Refuser → rouge */
+  .btn-danger {
+    @apply text-rose-700 bg-rose-50 ring-rose-200 hover:bg-rose-100 
+          dark:text-rose-300 dark:bg-rose-500/10 dark:ring-rose-400/30;
+  }
+
+  /* Marquer traitée (optionnel) → bleu clair */
+  .btn-info-soft {
+    @apply text-sky-700 bg-sky-50 ring-sky-200 hover:bg-sky-100
+          dark:text-sky-300 dark:bg-sky-500/10 dark:ring-sky-400/30;
+  }
+
+  .status-badge {
+    @apply inline-flex items-center rounded-full px-3 py-1 text-xs font-medium ring-1 ring-inset;
+  }
+
+  /* Validé → vert */
+  .status-success {
+    @apply text-emerald-700 bg-emerald-50 ring-emerald-200 
+          dark:text-emerald-300 dark:bg-emerald-500/10 dark:ring-emerald-400/30;
+  }
+
+  /* Refusé → rouge */
+  .status-danger {
+    @apply text-rose-700 bg-rose-50 ring-rose-200 
+          dark:text-rose-300 dark:bg-rose-500/10 dark:ring-rose-400/30;
+  }
+
+  /* Traité → bleu clair */
+  .status-info {
+    @apply text-sky-700 bg-sky-50 ring-sky-200 
+          dark:text-sky-300 dark:bg-sky-500/10 dark:ring-sky-400/30;
+  }
+
+  /* Créée → jaune */
+  .status-warning {
+    @apply text-amber-700 bg-amber-50 ring-amber-200 
+          dark:text-amber-300 dark:bg-amber-500/10 dark:ring-amber-400/30;
+  }
+
+
+}
+
+
