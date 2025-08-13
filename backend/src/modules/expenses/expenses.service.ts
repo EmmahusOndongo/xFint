@@ -54,11 +54,16 @@ export class ExpensesService {
   }
 
   async transition(id: string, next: 'APPROVED'|'REJECTED'|'PROCESSED', comment?: string) {
-    const patch =
-      next === 'PROCESSED' ? { status: next, accounting_comment: comment } :
-      { status: next, manager_comment: comment };
-    const { data, error } = await this.sb.from('expenses').update(patch).eq('id', id).select('*').single();
+    const patch = { status: next, comment }; // 👈 une seule colonne
+    const { data, error } = await this.sb
+      .from('expenses')
+      .update(patch)
+      .eq('id', id)
+      .select('*')
+      .single();
+
     if (error) throw new BadRequestException(error.message);
     return data;
   }
+
 }

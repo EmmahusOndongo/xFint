@@ -18,6 +18,7 @@ import {
   XCircle,
 } from "lucide-react";
 import Link from "next/link";
+import ActionCommentModal from "../../components/modals/ActionCommentModal";
 
 function countStats(list: Expense[]) {
   const total = list.length;
@@ -56,6 +57,40 @@ function ExpensesListPage() {
 
   const stats = countStats(list.data || []);
 
+  // 🔧 NEW: typer l'action en attente
+  type PendingAction =
+    | { type: "approve"; expense: Expense }
+    | { type: "reject";  expense: Expense }
+    | { type: "process"; expense: Expense }
+    | null;
+
+  const [pending, setPending] = useState<PendingAction>(null);
+
+  // 🔧 NEW: ouvre le modal selon l'action
+  const openApprove = (e: Expense) => setPending({ type: "approve", expense: e });
+  const openReject  = (e: Expense) => setPending({ type: "reject",  expense: e });
+  const openProcess = (e: Expense) => setPending({ type: "process", expense: e });
+
+  // 🔧 NEW: confirme (appelle la mutation avec commentaire)
+  const confirmAction = (comment: string) => {
+    if (!pending) return;
+    const id = pending.expense.id;
+
+    if (pending.type === "approve") {
+      approve.mutate({ id, comment });
+    } else if (pending.type === "reject") {
+      reject.mutate({ id, comment });
+    } else {
+      // commentaire facultatif pour "process"
+      process.mutate({ id, comment });
+    }
+    setPending(null);
+  };
+
+  // 🔧 NEW: état de chargement global pour le modal
+  const busy = approve.isPending || reject.isPending || process.isPending;
+
+
   return (
     <Sidebar>
       <div className="mx-auto max-w-7xl space-y-6">
@@ -63,22 +98,28 @@ function ExpensesListPage() {
         <div className="surface p-4 sm:p-5">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <h1 className="text-xl font-semibold">Toutes les notes</h1>
-            <div className="header-actions">
-              <div className="relative">
+
+            {/* ACTIONS: search + button sur la même ligne */}
+            <div className="flex w-full items-center gap-3 sm:w-auto">
+              {/* Search */}
+              <div className="relative flex-1 min-w-[220px] max-w-xs">
                 <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[rgb(var(--muted))]" />
                 <input
                   value={q}
                   onChange={(e) => setQ(e.target.value)}
                   placeholder="Rechercher par titre…"
-                  className="input w-72 pl-9"
+                  className="input w-full pl-9"
                 />
               </div>
-              <Link href="/expenses/new" className="btn-primary">
+
+              {/* Nouvelle note – même style que tes autres boutons */}
+              <Link href="/expenses/new" className="btn">
                 <Plus className="h-4 w-4" /> Nouvelle note
               </Link>
             </div>
           </div>
         </div>
+
 
         {/* Stat cards */}
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -209,12 +250,19 @@ function ExpensesListPage() {
               data={filtered}
               mode={mode}
               showEmail
-              loading={list.isLoading}
+              loading={list.isPending}
               onRowClick={setSelected}
-              onApprove={(e) => approve.mutate({ id: e.id })}
-              onReject={(e) => reject.mutate({ id: e.id })}
-              onProcess={(e) => process.mutate({ id: e.id })}
+              // ❌ Avant (appel direct des mutations) :
+              // onApprove={(e) => approve.mutate({ id: e.id })}
+              // onReject={(e) => reject.mutate({ id: e.id })}
+              // onProcess={(e) => process.mutate({ id: e.id })}
+
+              // ✅ Maintenant (ouvre le modal commentaire) :
+              onApprove={openApprove}
+              onReject={openReject}
+              onProcess={openProcess}
             />
+
           </div>
         </div>
 
@@ -228,6 +276,26 @@ function ExpensesListPage() {
           onReject={(id, comment) => reject.mutate({ id, comment })}
           onProcess={(id, comment) => process.mutate({ id, comment })}
         />
+
+        <ActionCommentModal
+          open={!!pending}
+          title={
+            pending?.type === "approve" ? "Valider la note" :
+            pending?.type === "reject"  ? "Refuser la note"  :
+                                          "Marquer la note comme traitée"
+          }
+          ctaLabel={
+            pending?.type === "approve" ? "Valider" :
+            pending?.type === "reject"  ? "Refuser" :
+                                          "Marquer traitée"
+          }
+          // commentaire requis pour approve/reject, facultatif pour process
+          requireComment={pending?.type === "process" ? false : true}
+          loading={busy}
+          onConfirm={confirmAction}
+          onClose={() => setPending(null)}
+        />
+
       </div>
     </Sidebar>
   );
