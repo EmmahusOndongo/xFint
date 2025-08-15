@@ -24,6 +24,7 @@ export class AuthController {
       must_set_password: u.must_set_password,
     });
 
+    // Cookies
     res.cookie(AUTH.ACCESS.COOKIE, access, {
       httpOnly: true,
       sameSite: 'lax',
@@ -38,8 +39,15 @@ export class AuthController {
       domain: APP.COOKIE_DOMAIN,
       maxAge: 1000 * 60 * 60 * 24 * 7, // 7j
     });
-    return { ok: true };
+
+    // Renvoi du corps avec les tokens
+    return {
+      ok: true,
+      accessToken: access,
+      refreshToken: refresh,
+    };
   }
+
 
   @Post('logout')
   async logout(@Res({ passthrough: true }) res: Response) {
