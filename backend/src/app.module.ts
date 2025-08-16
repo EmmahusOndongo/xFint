@@ -1,3 +1,4 @@
+// src/app.module.ts
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { ThrottlerModule } from '@nestjs/throttler';
@@ -6,6 +7,7 @@ import { UsersModule } from './modules/users/users.module';
 import { ExpensesModule } from './modules/expenses/expenses.module';
 import { StorageModule } from './modules/storage/storage.module';
 import { HealthModule } from './modules/health/health.module';
+import { SetupModule } from './setup/setup.module'; // 👈 AJOUT
 
 @Module({
   imports: [
@@ -16,6 +18,7 @@ import { HealthModule } from './modules/health/health.module';
     ExpensesModule,
     StorageModule,
     HealthModule,
+    SetupModule, // 👈 AJOUT
   ],
 })
 export class AppModule {}

@@ -1,6 +1,7 @@
 /* eslint-disable no-console */
 import { Injectable, Logger } from '@nestjs/common';
 import { createClient } from '@supabase/supabase-js';
+import { Pool } from 'pg';
 import * as bcrypt from 'bcrypt';
 
 const SCHEMA_SQL = `
@@ -25,7 +26,12 @@ create table if not exists users (
   role user_role not null default 'EMPLOYEE',
   must_set_password boolean not null default true,
   created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
+  updated_at timestamptz not null default now(),
+
+  -- Champs avatar
+  avatar_path text,              -- chemin dans Supabase storage
+  avatar_mime text,              -- type MIME (image/png, image/jpeg…)
+  avatar_updated_at timestamptz  -- dernière màj de l’avatar
 );
 
 create table if not exists expenses (
@@ -83,48 +89,62 @@ end $$;
 export class SetupService {
   private readonly logger = new Logger(SetupService.name);
 
-  private mkClient() {
+  private mkPool() {
+    const dbUrl = process.env.DATABASE_URL;
+    if (!dbUrl) throw new Error('DATABASE_URL manquant dans .env');
+    return new Pool({
+      connectionString: dbUrl,
+      ssl: { rejectUnauthorized: false }, // OK pour Supabase
+    });
+  }
+
+  private mkSupabase() {
     const url = process.env.SUPABASE_URL;
     const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-    if (!url || !key) {
-      throw new Error('SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY manquants');
-    }
+    if (!url || !key) throw new Error('SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY manquants');
     return createClient(url, key, {
       auth: { autoRefreshToken: false, persistSession: false },
     });
   }
 
   async run() {
-    const sb = this.mkClient();
+    // 1) Exécuter le schéma (idempotent)
+    const pool = this.mkPool();
+    const client = await pool.connect();
+    try {
+      this.logger.log('🔧 Création/vérification du schéma…');
+      await client.query(SCHEMA_SQL);
+      this.logger.log('✅ Schéma OK');
 
-    // 1) Vérifier que les tables clés existent
-    let schemaReady = true;
-    const testTables = [
-      { table: 'users', select: 'id' },
-      { table: 'expenses', select: 'id' },
-      { table: 'expense_files', select: 'id' },
-    ];
+      // 2) Seed manager (idempotent, via SQL)
+      const email = 'manager@supherman.com';
+      const pass = 'Suph3rm4n!';
+      const hash = await bcrypt.hash(pass, 10);
 
-    for (const t of testTables) {
-      try {
-        const { error } = await sb.from(t.table).select(t.select, { head: true, count: 'exact' });
-        if (error) throw error;
-      } catch (e: any) {
-        schemaReady = false;
-        this.logger.warn(`Schéma absent (table "${t.table}" introuvable).`);
-      }
-    }
-
-    // 2) Si schéma manquant → afficher le SQL à exécuter dans Supabase (SQL Editor)
-    if (!schemaReady) {
-      this.logger.warn('➡️  Ouvre Supabase → SQL Editor et colle le SQL ci-dessous :');
-      console.log('\n----- SCHEMA SQL BEGIN -----\n' + SCHEMA_SQL + '\n----- SCHEMA SQL END -----\n');
-      this.logger.warn('Après exécution, relance l’API. Le setup créera ensuite les buckets et le manager.');
-      return;
+      await client.query(
+        `
+        insert into users (email, role, password_hash, must_set_password)
+        values ($1, 'MANAGER', $2, false)
+        on conflict (email) do update
+          set role = excluded.role,
+              password_hash = excluded.password_hash,
+              must_set_password = excluded.must_set_password
+        `,
+        [email, hash],
+      );
+      this.logger.log(`👤 Manager prêt: ${email}`);
+    } catch (e: any) {
+      this.logger.error('Erreur schéma/seed: ' + (e?.message || e));
+      throw e;
+    } finally {
+      client.release();
+      await pool.end();
     }
 
     // 3) Buckets Storage (idempotent)
     try {
+      const sb = this.mkSupabase();
+
       const bucketsToEnsure: Array<{
         name: string;
         public: boolean;
@@ -133,11 +153,8 @@ export class SetupService {
       }> = [];
 
       const expenseBucket = process.env.SUPABASE_BUCKET;
-      if (expenseBucket) {
-        bucketsToEnsure.push({ name: expenseBucket, public: false });
-      } else {
-        this.logger.warn('SUPABASE_BUCKET manquant (ex: "expense-receipts").');
-      }
+      if (expenseBucket) bucketsToEnsure.push({ name: expenseBucket, public: false });
+      else this.logger.warn('SUPABASE_BUCKET manquant (ex: "expense-receipts").');
 
       const avatarsBucket = process.env.SUPABASE_AVATARS_BUCKET || 'avatars';
       bucketsToEnsure.push({
@@ -166,25 +183,6 @@ export class SetupService {
       }
     } catch (e: any) {
       this.logger.error('Erreur buckets: ' + (e?.message || e));
-    }
-
-    // 4) Seed manager (idempotent)
-    try {
-      const email = 'manager@supherman.com';
-      const pass = 'Suph3rm4n!';
-      const hash = await bcrypt.hash(pass, 10);
-
-      const { error: upsertErr } = await sb
-        .from('users')
-        .upsert(
-          { email, role: 'MANAGER', password_hash: hash, must_set_password: false },
-          { onConflict: 'email' }
-        );
-      if (upsertErr) throw upsertErr;
-
-      this.logger.log(`👤 Manager prêt: ${email}`);
-    } catch (e: any) {
-      this.logger.error('Seed manager échoué: ' + (e?.message || e));
     }
 
     this.logger.log('✅ Setup terminé.');
