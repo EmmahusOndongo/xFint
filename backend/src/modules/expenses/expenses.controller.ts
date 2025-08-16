@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body, Controller, Get, Param, Patch, Post, UploadedFiles, UseGuards, UseInterceptors
 } from '@nestjs/common';
 import { FilesInterceptor } from '@nestjs/platform-express';
@@ -13,11 +14,15 @@ import { CreateExpenseDto } from './dtos/create-expense.dto';
 import { ExpensesService } from './expenses.service';
 import { StorageService } from '../storage/storage.service';
 import { memoryStorage } from 'multer';
+import { makeSupabaseAdmin } from '../../config/supabase.config';
 
 @UseGuards(JwtAuthGuard, RolesGuard, FirstLoginGuard)
 @Controller('expenses')
 export class ExpensesController {
-  constructor(private expenses: ExpensesService, private storage: StorageService) {}
+  constructor(
+    private expenses: ExpensesService,
+    private storage: StorageService
+  ) {}
 
   // Page 2 - Mes notes
   @Get('my')
@@ -78,5 +83,21 @@ export class ExpensesController {
   @Patch(':id/process')
   process(@Param('id') id: string, @Body('comment') comment?: string) {
     return this.expenses.transition(id, 'PROCESSED', comment);
+  }
+
+  @Get(':expenseId/files/:fileId/url')
+  async signFile(@Param('expenseId') expenseId: string, @Param('fileId') fileId: string) {
+    // retrouve le storage_path de la ligne expense_files
+    const sb = makeSupabaseAdmin();
+    const { data, error } = await sb
+      .from('expense_files')
+      .select('storage_path')
+      .eq('id', fileId)
+      .eq('expense_id', expenseId)
+      .single();
+    if (error) throw new BadRequestException(error.message);
+
+    const url = await this.storage.signUrl(data.storage_path, 3600);
+    return { url, expiresIn: 3600 };
   }
 }

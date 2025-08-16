@@ -5,6 +5,7 @@ import { SetupService } from './setup.service';
 export class SetupModule implements OnApplicationBootstrap {
   private readonly logger = new Logger(SetupModule.name);
   constructor(private readonly setup: SetupService) {}
+
   async onApplicationBootstrap() {
     if (process.env.AUTO_SETUP !== 'true') {
       this.logger.log('AUTO_SETUP=false → skip setup');

@@ -113,9 +113,9 @@ function InviteUserPage() {
                   value={role}
                   onChange={(e) => setRole(e.target.value as Role)}
                 >
-                  <option value="EMPLOYEE">EMPLOYEE</option>
-                  <option value="ACCOUNTING">ACCOUNTING</option>
-                  <option value="MANAGER">MANAGER</option>
+                  <option value="EMPLOYEE">Employé(e)</option>
+                  <option value="ACCOUNTING">Comptabilité</option>
+                  <option value="MANAGER">Manager</option>
                 </select>
 
                 <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[rgb(var(--muted))]" />
