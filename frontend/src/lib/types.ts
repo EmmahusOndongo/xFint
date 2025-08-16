@@ -6,6 +6,8 @@ export type AuthUser = {
   role: Role;
   full_name?: string;
   must_set_password?: boolean;
+  avatarUrl?: string | null;
+  
 };
 
 export type ExpenseStatus = "CREATED" | "APPROVED" | "REJECTED" | "PROCESSED";
