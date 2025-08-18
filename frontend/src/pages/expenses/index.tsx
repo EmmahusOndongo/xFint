@@ -24,11 +24,12 @@ function countStats(list: Expense[]) {
   const created = list.filter((e) => e.status === "CREATED").length;
   const approved = list.filter((e) => e.status === "APPROVED").length;
   const rejected = list.filter((e) => e.status === "REJECTED").length;
-  return { total, created, approved, rejected };
+  const processed = list.filter((e)=> e.status === "PROCESSED").length;
+  return { total, created, approved, rejected, processed };
 }
 
 // Onglets possibles (inclure PROCESSED si besoin)
-type Tab = "ALL" | "CREATED" | "APPROVED" | "REJECTED"; // | "PROCESSED"
+type Tab = "ALL" | "CREATED" | "APPROVED" | "REJECTED" | "PROCESSED"; // | "PROCESSED"
 
 function ExpensesListPage() {
   const { user } = useAuth();
@@ -128,6 +129,18 @@ function ExpensesListPage() {
               <XCircle className="h-5 w-5" />
             </div>
           </div>
+
+          <div className="kpi-card">
+            <div>
+              <div className="kpi-title">traitée</div>
+              <div className="kpi-value">{stats.processed}</div>
+              <div className="stat-sub">traitée par la comptabilité</div>
+            </div>
+            <div className="stat-icon text-rose-600 bg-rose-50 dark:text-rose-300 dark:bg-rose-500/15">
+              <XCircle className="h-5 w-5" />
+            </div>
+          </div>
+
         </div>
 
         {/* Toolbar + table */}
@@ -171,6 +184,15 @@ function ExpensesListPage() {
                     {(list.data || []).filter((e) => e.status === "REJECTED").length}
                   </span>
                 </button>
+                <button
+                  className={`seg-item ${tab === "PROCESSED" ? "active" : ""}`}
+                  onClick={() => setTab("PROCESSED")}  
+                >
+                  Traitée{" "}
+                  <span className="chip">
+                    {(list.data || []).filter((e) => e.status === "PROCESSED").length}
+                  </span>
+                </button>  
               </div>
 
               {/* Sélecteur (mobile) */}
@@ -184,6 +206,7 @@ function ExpensesListPage() {
                   <option value="CREATED">À valider</option>
                   <option value="APPROVED">Validées</option>
                   <option value="REJECTED">Refusées</option>
+                  <option value="PROCESSED">Traitée</option>
                 </select>
               </div>
             </div>

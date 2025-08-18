@@ -18,7 +18,7 @@ import { SetupModule } from './setup/setup.module'; // 👈 AJOUT
     ExpensesModule,
     StorageModule,
     HealthModule,
-    SetupModule, // 👈 AJOUT
+    //SetupModule, // 👈 AJOUT
   ],
 })
 export class AppModule {}
