@@ -7,42 +7,26 @@ services:
     env_file:
       - ./backend/.env
     environment:
-      # Surcharge si besoin
       - NODE_ENV=production
       - PORT=3000
-      # IMPORTANT: comme tu es en localhost côté navigateur
       - CORS_ORIGINS=http://localhost:3001
-      # Si tu gardes Supabase:
-      # - SUPABASE_URL=...
-      # - SUPABASE_SERVICE_ROLE_KEY=...
-      # - SUPABASE_ANON_KEY=...
-      # - SUPABASE_BUCKET=...
-      # - COOKIE_DOMAIN=localhost
-      # - COOKIE_SECURE=false
     ports:
       - "3000:3000"
-    healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/health || exit 1"]
-      interval: 10s
-      timeout: 3s
-      retries: 5
     restart: unless-stopped
 
   web:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: "http://localhost:3000"
     container_name: gi_web
-    env_file:
-      - ./frontend/.env.local
     environment:
       - NODE_ENV=production
       - PORT=3001
-      # ton client doit appeler l'API publiée en host
       - NEXT_PUBLIC_API_URL=http://localhost:3000
     ports:
       - "3001:3001"
     depends_on:
-      api:
-        condition: service_healthy
+      - api
     restart: unless-stopped

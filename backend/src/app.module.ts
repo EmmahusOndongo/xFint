@@ -7,7 +7,7 @@ import { UsersModule } from './modules/users/users.module';
 import { ExpensesModule } from './modules/expenses/expenses.module';
 import { StorageModule } from './modules/storage/storage.module';
 import { HealthModule } from './modules/health/health.module';
-import { SetupModule } from './setup/setup.module'; // 👈 AJOUT
+import { SetupModule } from './setup/setup.module'; // a decommenter c est une nouvelle base de données afin de creer les tables automatiquement
 
 @Module({
   imports: [
@@ -18,7 +18,7 @@ import { SetupModule } from './setup/setup.module'; // 👈 AJOUT
     ExpensesModule,
     StorageModule,
     HealthModule,
-    //SetupModule, // 👈 AJOUT
+    //SetupModule, // a decommenter c est une nouvelle base de données afin de creer les tables automatiquement
   ],
 })
 export class AppModule {}
