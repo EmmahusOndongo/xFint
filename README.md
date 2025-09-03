@@ -40,7 +40,7 @@ xfint/
   backend/ (NestJS)
     src/
       modules/ (Auth, Expenses,Health, Userss, Storage)
-      common/ (decorators, guards, dtos )
+      common/ (decorators, guards )
       config/ (toutes les configurations configs typeorm & supabase)
       seeds/
       setup/(creations des tables dans la base de données)

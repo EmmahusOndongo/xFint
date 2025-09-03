@@ -1,42 +1,50 @@
-// apps/backend/src/modules/auth/strategies/jwt.strategy.ts
 import { Injectable } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { Strategy, ExtractJwt } from 'passport-jwt';
 import { Request } from 'express';
 import { ConfigService } from '@nestjs/config';
 
+// Fonction utilitaire pour extraire le JWT depuis un cookie
 function cookieExtractor(req: Request): string | null {
   if (!req || !req.cookies) return null;
-  // Essaie le nom depuis l'env, sinon 'sh_access'
+
+  // Nom du cookie défini dans les variables d'environnement, sinon valeur par défaut
   const nameFromEnv = process.env.AUTH_COOKIE_ACCESS || 'sh_access';
+
+  // Retourne le token présent dans le cookie, ou null si absent
   return req.cookies[nameFromEnv] ?? null;
 }
 
 @Injectable()
+// Stratégie JWT utilisée par Passport pour valider les tokens d'accès
 export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
   constructor(private readonly config: ConfigService) {
+    // Récupère la clé secrète dans la configuration
     const secret = config.get<string>('JWT_ACCESS_SECRET');
     if (!secret) throw new Error('JWT_ACCESS_SECRET is missing in environment');
 
     super({
-      // ✅ Lis d’abord le cookie, puis (fallback) le Bearer header
+      // ✅ Ordre de lecture du token :
+      // 1. Depuis un cookie
+      // 2. Sinon depuis l'en-tête Authorization: Bearer <token>
       jwtFromRequest: ExtractJwt.fromExtractors([
         cookieExtractor,
         ExtractJwt.fromAuthHeaderAsBearerToken(),
       ]),
-      ignoreExpiration: false,
-      secretOrKey: secret,
+      ignoreExpiration: false, // Refuse les tokens expirés
+      secretOrKey: secret,     // Clé secrète pour vérifier la signature
     });
   }
 
-  // ✅ IMPORTANT : on RETOURNE l’objet; pas de "done" ici
+  // Méthode appelée automatiquement si le token est valide
+  // Elle permet de "façonner" l'objet utilisateur injecté dans req.user
   async validate(payload: any) {
-    // payload: { sub, email, role, must_set_password }
+    // Le payload est le contenu du JWT décodé
     return {
-      sub: payload.sub,
-      email: payload.email,
-      role: payload.role,
-      must_set_password: payload.must_set_password,
+      sub: payload.sub,                       // Identifiant unique de l'utilisateur
+      email: payload.email,                   // Email
+      role: payload.role,                     // Rôle
+      must_set_password: payload.must_set_password, // Flag "première connexion"
     };
   }
 }
