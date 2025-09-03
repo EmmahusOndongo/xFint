@@ -99,7 +99,7 @@ cd xFint
 
 ### Fichier racine `.env`
 
-Créez un fichier `.env` à la racine (ou utilisez ceux déjà fournis). Adaptez selon vos secrets/envs.
+Créez un fichier `.env` à la racine du Backend (ou utilisez ceux déjà fournis). Adaptez selon vos secrets/envs.
 
 ```ini
 # ---------- GLOBAL ----------
@@ -137,6 +137,9 @@ API_PORT=5000
 API_CORS_ORIGIN=http://localhost:3000
 
 # ---------- FRONTEND ----------
+
+Créez un fichier `.env.local` à la racine du Frontend (ou utilisez ceux déjà fournis). Adaptez selon vos secrets/envs.
+
 NEXT_PUBLIC_API_BASE_URL=http://localhost:5000
 NEXT_PUBLIC_SUPABASE_URL=${SUPABASE_URL}
 NEXT_PUBLIC_SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}
