@@ -24,13 +24,13 @@ export class ExpensesController {
     private storage: StorageService
   ) {}
 
-  // Page 2 - Mes notes
+  //  Mes notes
   @Get('my')
   mine(@CurrentUser() user: JwtUser) {
     return this.expenses.my(user.sub);
   }
 
-  // Page 3 - Création
+  
   @Post()
   create(@CurrentUser() user: JwtUser, @Body() dto: CreateExpenseDto) {
     return this.expenses.create(user.sub, dto.title, dto.comment);
@@ -53,7 +53,7 @@ export class ExpensesController {
     return this.expenses.getOne(id);
   }
 
-  // Page 4 - Manager: toutes + valider/refuser
+  // Manager: toutes + valider/refuser
   @Roles('MANAGER')
   @Get()
   allForManager() {
@@ -72,7 +72,7 @@ export class ExpensesController {
     return this.expenses.transition(id, 'REJECTED', comment);
   }
 
-  // Page 4 - Comptabilité: validées/traitées + marquer traitée
+  // Comptabilité: validées/traitées + marquer traitée
   @Roles('ACCOUNTING')
   @Get('accounting/list')
   allForAccounting() {

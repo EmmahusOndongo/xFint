@@ -44,7 +44,7 @@ export class AuthController {
       maxAge: 1000 * 60 * 60 * 24 * 7, // 7 jours
     });
 
-    // 4) Renvoie aussi les tokens dans la réponse (optionnel selon ton client)
+    // Renvoie aussi les tokens dans la réponse (optionnel selon ton client)
     return {
       ok: true,
       accessToken: access,
